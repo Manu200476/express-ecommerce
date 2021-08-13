@@ -31,6 +31,18 @@ Cart.belongsToMany(Product, { through: CartItem })
 Product.belongsToMany(Cart, { through: CartItem })
 
 sequelize
-    .sync({force: true})
-    .then(() => app.listen(3000))
-    .catch(e => console.log(e))
+    .sync()
+    .then(res => User.findByPk(1))
+    .then(user => {
+        if (!user) {
+            return User.create({'name': 'Manuel', 'email': 'uocfi@jncfo.com'})
+        }
+        return user
+    })
+    .then(user => user.createCart())
+    .then((res) => {
+        app.listen(3306)
+    })
+    .catch(e => {
+        console.log(e)   
+    })

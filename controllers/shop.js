@@ -31,31 +31,38 @@ exports.getIndex = (req, res, next) => {
 }
 
 exports.getCart = (req, res, next) => {
-  Cart.getCart(cart => {
-    Product.fetchAll(products => {
-      const cartProducts = []
-      for (product of products) {
-        const cartProductData = cart.products.find(
-          prod => prod.id === product.id
-        )
-        if (cartProductData) {
-          cartProducts.push({ productData: product, qty: cartProductData.qty })
-        }
-      }
-      res.render('shop/cart', {
-        path: '/cart',
-        pageTitle: 'Your Cart',
-        products: cartProducts
-      })
+  req.user
+    .getCart()
+    .then(cart => {
+      cart.getProducts()
+        .then(products => {
+          res.render('shop/cart', {
+            path: '/cart',
+            pageTitle: 'Your Cart',
+            products
+          })
+        })
+        .catch(e => console.log(e))
     })
-  })
+    .catch(e => console.log(e))
 }
 
 exports.postCart = (req, res, next) => {
   const prodId = req.body.productId
-  Product.findById(prodId, product => {
-    Cart.addProduct(prodId, product.price)
-  })
+  let fetchedCart
+  req.user
+    .getCart()
+    .then(cart => {
+      fetchedCart = cart
+      cart.getProducts({ where: { id: prodId } })
+    })
+    .then(product => {
+      const newQuantity = 1
+      const newProduct = product[0]
+      fetchedCart.addProduct(newProduct, {through: {quantity: newQuantity}})
+    })
+    .catch(e => console.log(e))
+  
   res.redirect('/cart')
 }
 
